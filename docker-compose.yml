@@ -1,10 +1,8 @@
-version: '3'
+version: '2'
 services:
 
   consul:
     image: "consul"
-    networks:
-      - base
     hostname: "consul"
     command: "agent -dev -client 0.0.0.0"
     ports:
@@ -16,9 +14,9 @@ services:
     depends_on:
       - consul
     image: "vault"
-    networks:
-      - base
     hostname: "vault"
+    links:
+      - "consul:consul"
     environment:
       VAULT_ADDR: http://127.0.0.1:8200
     ports:
@@ -28,20 +26,3 @@ services:
       - ./config/vault:/config:z
       - ./config/vault/policies:/policies:z
     entrypoint: /wait-for-it.sh -t 20 -h consul -p 8500 -s -- vault server -config=/config/with-consul.hcl
-
-  ui:
-    image: djenriquez/vault-ui
-    networks:
-      - base
-    depends_on:
-        - vault
-        - consul
-    ports:
-      - "8000:8000"
-    environment:
-      VAULT_URL_DEFAULT: https://vault.redfox.tech
-      VAULT_AUTH_DEFAULT: GITHUB
-
-
-networks:
-  base:
